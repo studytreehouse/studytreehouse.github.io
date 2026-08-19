@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Efferent</title>
+<meta name="description" content="Efferent Oy kehittää oppimisen työkalua, joka perustuu muistin hakuprosesseihin ja leviävään aktivaatioon.">
+<meta property="og:title" content="Efferent">
+<meta property="og:description" content="Effortless exponentiality in learning.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%236B3FA0' stroke-width='10'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2B1A40;
+    --deep:#180D24;
+    --purple:#6B3FA0;
+    --purple-lift:#8F63C4;
+    --gold:#F5A623;
+    --paper:#EFE8F6;
+    --muted:#9B8AAE;
+    --afferent:#4C9BE8;
+    --efferent:#E8433F;
+    --neutral:Helvetica,"Helvetica Neue",Arial,"Liberation Sans",system-ui,sans-serif;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  html{-webkit-text-size-adjust:100%}
+
+  body{
+    min-height:100svh;
+    background:var(--deep);
+    color:var(--paper);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-weight:300;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  /* ambient network canvas ------------------------------------------ */
+  #net{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+    display:block;
+  }
+
+  .veil{
+    position:fixed;
+    inset:0;
+    z-index:1;
+    pointer-events:none;
+    background:
+      radial-gradient(115% 85% at 22% 42%, rgba(24,13,36,0) 0%, rgba(24,13,36,.70) 58%, rgba(24,13,36,.93) 100%);
+  }
+
+  /* layout ----------------------------------------------------------- */
+  .stage{
+    position:relative;
+    z-index:2;
+    min-height:100svh;
+    display:flex;
+    align-items:center;
+    padding:clamp(28px,6vw,88px);
+  }
+
+  .panel{
+    width:100%;
+    max-width:41rem;
+  }
+
+  /* logo -------------------------------------------------------------- */
+  .mark{
+    width:clamp(148px,20vw,208px);
+    height:auto;
+    display:block;
+    margin-bottom:clamp(26px,4vw,40px);
+    overflow:visible;
+  }
+  .mark .soma{fill:rgba(107,63,160,.22);stroke:var(--purple-lift);stroke-width:3.5}
+  .mark .aff{stroke:var(--afferent);stroke-width:3;stroke-linecap:round;fill:none}
+  .mark .aff-dot{fill:var(--afferent)}
+  .mark .axon{stroke:var(--efferent);stroke-width:2.5;stroke-linecap:round;fill:none;opacity:.8}
+  .mark .sheath{stroke:var(--efferent);stroke-width:9;stroke-linecap:round;fill:none}
+
+  /* type -------------------------------------------------------------- */
+  .wordmark{
+    display:inline-block;
+    font-family:var(--neutral);
+    font-weight:500;
+    font-size:clamp(3rem,10vw,5.6rem);
+    line-height:1;
+    letter-spacing:-.028em;
+    color:var(--paper);
+  }
+
+  .thesis{
+    margin-top:clamp(20px,3vw,30px);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-weight:400;
+    font-size:clamp(1.1rem,2.8vw,1.44rem);
+    line-height:1.34;
+    letter-spacing:-.004em;
+    color:var(--gold);
+  }
+
+  .note{
+    margin-top:clamp(16px,2.4vw,22px);
+    max-width:33rem;
+    font-size:clamp(.98rem,2.1vw,1.06rem);
+    line-height:1.62;
+    color:var(--muted);
+  }
+
+  .status{
+    margin-top:clamp(30px,4.5vw,44px);
+    display:inline-flex;
+    align-items:center;
+    gap:.65rem;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.735rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--paper);
+    border:1px solid rgba(143,99,196,.42);
+    border-radius:999px;
+    padding:.52rem 1rem .52rem .82rem;
+    background:rgba(107,63,160,.1);
+  }
+  .status .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--gold);
+    box-shadow:0 0 0 0 rgba(245,166,35,.55);
+    animation:beat 2.6s ease-out infinite;
+  }
+  @keyframes beat{
+    0%{box-shadow:0 0 0 0 rgba(245,166,35,.5)}
+    70%{box-shadow:0 0 0 9px rgba(245,166,35,0)}
+    100%{box-shadow:0 0 0 0 rgba(245,166,35,0)}
+  }
+
+  .meta{
+    margin-top:clamp(40px,6vw,64px);
+    padding-top:1.15rem;
+    border-top:1px solid rgba(143,99,196,.2);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.755rem;
+    line-height:2;
+    letter-spacing:.045em;
+    color:var(--muted);
+  }
+  .meta a{color:var(--muted);text-decoration:none;border-bottom:1px solid rgba(155,138,174,.35)}
+  .meta a:hover,.meta a:focus-visible{color:var(--gold);border-bottom-color:var(--gold)}
+
+  .demo{
+    margin-top:clamp(12px,1.8vw,16px);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.86rem;
+    letter-spacing:.02em;
+  }
+  .demo a{
+    color:var(--paper);
+    text-decoration:none;
+    border-bottom:1px solid rgba(245,166,35,.55);
+    padding-bottom:2px;
+  }
+  .demo a:hover,.demo a:focus-visible{color:var(--gold);border-bottom-color:var(--gold)}
+
+  /* LinkedIn QR, oikea alareuna */
+  .li{
+    position:fixed;
+    right:clamp(16px,2.6vw,30px);
+    bottom:clamp(16px,2.6vw,30px);
+    z-index:3;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:.34rem;
+    text-decoration:none;
+    opacity:.5;
+    transition:opacity .3s ease;
+  }
+  .li:hover,.li:focus-visible{opacity:1}
+  .li svg{
+    width:60px;
+    height:60px;
+    display:block;
+    border-radius:3px;
+    padding:3px;
+    background:var(--paper);
+  }
+  .li span{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.6rem;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .li:hover span,.li:focus-visible span{color:var(--gold)}
+
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}
+
+  /* entrance ---------------------------------------------------------- */
+  .rise{opacity:0;transform:translateY(14px);animation:rise .85s cubic-bezier(.22,.68,.32,1) forwards}
+  .d1{animation-delay:.10s}
+  .d2{animation-delay:.26s}
+  .d3{animation-delay:.40s}
+  .d4{animation-delay:.54s}
+  .d5{animation-delay:.68s}
+  .d6{animation-delay:.82s}
+  @keyframes rise{to{opacity:1;transform:translateY(0)}}
+
+  @media (prefers-reduced-motion: reduce){
+    .rise{animation:none;opacity:1;transform:none}
+    .status .dot{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="net" aria-hidden="true"></canvas>
+<div class="veil" aria-hidden="true"></div>
+
+<div class="stage">
+  <div class="panel">
+
+    <svg class="mark rise d1" viewBox="0 0 240 100" role="img" aria-label="Efferent">
+      <!-- afferent: sisääntulot vasemmalta -->
+      <path class="aff" d="M12 20 L70 42"/>
+      <path class="aff" d="M6 50 L69 50"/>
+      <path class="aff" d="M12 80 L70 58"/>
+      <circle class="aff-dot" cx="12" cy="20" r="3.2"/>
+      <circle class="aff-dot" cx="6" cy="50" r="3.2"/>
+      <circle class="aff-dot" cx="12" cy="80" r="3.2"/>
+
+      <!-- sooma -->
+      <circle class="soma" cx="88" cy="50" r="19"/>
+
+      <!-- efferent: aksoni myeliinitupilla oikealle -->
+      <path class="axon" d="M107 50 L233 50"/>
+      <path class="sheath" d="M114 50 L140 50"/>
+      <path class="sheath" d="M150 50 L176 50"/>
+      <path class="sheath" d="M186 50 L212 50"/>
+      <path class="axon" d="M222 50 L233 40"/>
+      <path class="axon" d="M222 50 L233 60"/>
+    </svg>
+
+    <h1><span class="wordmark rise d2" id="wordmark">Efferent</span></h1>
+
+    <p class="thesis rise d3">Effortless exponentiality in learning.</p>
+
+    <p class="note rise d4">
+      Efferent on kognitiivista psykologiaa ja kevyitä keinoälymalleja
+      hyödyntävä opiskelutyökalu, joka optimoi oppimisprosessin ja
+      vähentää unohtamista.
+    </p>
+
+    <p class="demo rise d4">
+      <a href="https://demo.efferent.fi">demo.efferent.fi</a>
+    </p>
+
+    <div class="status rise d5">
+      <span class="dot" aria-hidden="true"></span>
+      Sivusto työn alla
+    </div>
+
+    <div class="meta rise d6">
+      Efferent Oy &middot; Y-tunnus 3636871-2 &middot; Tampere, Suomi<br>
+      <a href="mailto:efferenteducation@gmail.com">efferenteducation@gmail.com</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  var canvas = document.getElementById('net');
+  if(!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext('2d');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var nodes = [], edges = [], dpr = 1, W = 0, H = 0, raf = null;
+
+  // aktivaation lähtöpiste — kiinnitetään Efferent-sanan oikealle puolelle
+  var origin = { x: 0, y: 0, glow: 0 };
+  var waveAt = -1e9;          // milloin viimeisin aalto lähti
+  var WAVE_SPEED = 0.34;      // pikseliä per millisekunti
+
+  function placeOrigin(){
+    var wm = document.getElementById('wordmark');
+    if(!wm){ origin.x = W * 0.52; origin.y = H * 0.46; return; }
+    var r = wm.getBoundingClientRect();
+    if(!r.width){ origin.x = W * 0.52; origin.y = H * 0.46; return; }
+    origin.x = Math.min(r.right + Math.max(38, r.width * 0.13), W - 42);
+    origin.y = r.top + r.height * 0.46;
+  }
+
+  function build(){
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width  = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    var area = W * H;
+    var count = Math.max(26, Math.min(74, Math.round(area / 17000)));
+
+    nodes = [];
+    for(var i = 0; i < count; i++){
+      nodes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.085,
+        vy: (Math.random() - 0.5) * 0.085,
+        r: 1.5 + Math.random() * 1.7,
+        act: 0,
+        due: -1,
+        amp: 1,
+        adj: []
+      });
+    }
+
+    var reach = Math.max(120, Math.min(230, Math.sqrt(area) / 5.2));
+    edges = [];
+    for(var a = 0; a < nodes.length; a++){
+      for(var b = a + 1; b < nodes.length; b++){
+        var dx = nodes[a].x - nodes[b].x;
+        var dy = nodes[a].y - nodes[b].y;
+        var d  = Math.sqrt(dx*dx + dy*dy);
+        if(d < reach){
+          edges.push({ a:a, b:b, act:0 });
+          nodes[a].adj.push({ n:b, e:edges.length-1 });
+          nodes[b].adj.push({ n:a, e:edges.length-1 });
+        }
+      }
+    }
+
+    placeOrigin();
+  }
+
+  // taustan hiljainen satunnainen syttyminen (leviää linkkejä pitkin)
+  function ambientFire(now){
+    if(!nodes.length) return;
+    var seed = Math.floor(Math.random() * nodes.length);
+    var depth = new Array(nodes.length).fill(-1);
+    depth[seed] = 0;
+    var queue = [seed], head = 0;
+    nodes[seed].due = now; nodes[seed].amp = 0.5;
+
+    while(head < queue.length){
+      var cur = queue[head++];
+      if(depth[cur] > 4) continue;
+      for(var k = 0; k < nodes[cur].adj.length; k++){
+        var nb = nodes[cur].adj[k].n;
+        if(depth[nb] === -1){
+          depth[nb] = depth[cur] + 1;
+          nodes[nb].due = now + depth[nb] * 170;
+          nodes[nb].amp = 0.5;
+          queue.push(nb);
+        }
+      }
+    }
+  }
+
+  // pääelementti: aalto lähtee Efferent-sanan vierestä ja leviää ulospäin
+  function originWave(now){
+    waveAt = now;
+    origin.glow = 1;
+    var span = Math.sqrt(W*W + H*H);
+    for(var i = 0; i < nodes.length; i++){
+      var dx = nodes[i].x - origin.x;
+      var dy = nodes[i].y - origin.y;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      nodes[i].due = now + d / WAVE_SPEED;
+      nodes[i].amp = Math.max(0.3, 1 - d / (span * 0.78));
+    }
+  }
+
+  function draw(now){
+    ctx.clearRect(0, 0, W, H);
+
+    var i, n, e;
+
+    for(i = 0; i < nodes.length; i++){
+      n = nodes[i];
+      n.x += n.vx; n.y += n.vy;
+      if(n.x < -40) n.x = W + 40; else if(n.x > W + 40) n.x = -40;
+      if(n.y < -40) n.y = H + 40; else if(n.y > H + 40) n.y = -40;
+
+      if(n.due >= 0 && now >= n.due){
+        n.act = n.amp;
+        n.due = -1;
+        for(var k = 0; k < n.adj.length; k++){
+          var edge = edges[n.adj[k].e];
+          if(edge.act < n.amp * 0.9) edge.act = n.amp * 0.9;
+        }
+      }
+      if(n.act > 0) n.act *= 0.976;
+      if(n.act < 0.004) n.act = 0;
+    }
+
+    // linkit
+    for(i = 0; i < edges.length; i++){
+      e = edges[i];
+      var na = nodes[e.a], nb2 = nodes[e.b];
+      var dx = na.x - nb2.x, dy = na.y - nb2.y;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      var fade = Math.max(0, 1 - dist / 240);
+      if(fade <= 0.01){ e.act *= 0.965; continue; }
+
+      if(e.act > 0.004){
+        ctx.strokeStyle = 'rgba(245,166,35,' + (e.act * fade * 0.5).toFixed(3) + ')';
+        ctx.lineWidth = 1.15;
+        e.act *= 0.955;
+      } else {
+        e.act = 0;
+        ctx.strokeStyle = 'rgba(122,74,178,' + (fade * 0.2).toFixed(3) + ')';
+        ctx.lineWidth = 0.85;
+      }
+      ctx.beginPath();
+      ctx.moveTo(na.x, na.y);
+      ctx.lineTo(nb2.x, nb2.y);
+      ctx.stroke();
+    }
+
+    // solmut
+    for(i = 0; i < nodes.length; i++){
+      n = nodes[i];
+      if(n.act > 0.02){
+        var glow = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 22 * n.act + 5);
+        glow.addColorStop(0, 'rgba(245,166,35,' + (n.act * 0.4).toFixed(3) + ')');
+        glow.addColorStop(1, 'rgba(245,166,35,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 22 * n.act + 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      var base = 0.34 + n.act * 0.62;
+      ctx.fillStyle = n.act > 0.02
+        ? 'rgba(245,166,35,' + base.toFixed(3) + ')'
+        : 'rgba(155,138,174,' + (base * 0.62).toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r + n.act * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // lähtöpiste: pysyvä hento kimallus, joka leimahtaa aallon alkaessa
+    if(origin.glow > 0) origin.glow *= 0.965;
+    var pulse = 0.30 + 0.16 * Math.sin(now / 780);
+    var level = Math.min(1, pulse + origin.glow);
+
+    var seed = ctx.createRadialGradient(origin.x, origin.y, 0, origin.x, origin.y, 26 + origin.glow * 34);
+    seed.addColorStop(0, 'rgba(245,166,35,' + (level * 0.42).toFixed(3) + ')');
+    seed.addColorStop(1, 'rgba(245,166,35,0)');
+    ctx.fillStyle = seed;
+    ctx.beginPath();
+    ctx.arc(origin.x, origin.y, 26 + origin.glow * 34, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(250,222,170,' + Math.min(0.95, 0.55 + origin.glow * 0.45).toFixed(3) + ')';
+    ctx.beginPath();
+    ctx.arc(origin.x, origin.y, 2.1 + origin.glow * 1.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function still(){
+    ctx.clearRect(0, 0, W, H);
+    var i;
+    for(i = 0; i < edges.length; i++){
+      var na = nodes[edges[i].a], nb2 = nodes[edges[i].b];
+      var dx = na.x - nb2.x, dy = na.y - nb2.y;
+      var fade = Math.max(0, 1 - Math.sqrt(dx*dx + dy*dy) / 240);
+      if(fade <= 0.01) continue;
+      ctx.strokeStyle = 'rgba(122,74,178,' + (fade * 0.2).toFixed(3) + ')';
+      ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(na.x, na.y);
+      ctx.lineTo(nb2.x, nb2.y);
+      ctx.stroke();
+    }
+    for(i = 0; i < nodes.length; i++){
+      ctx.fillStyle = 'rgba(155,138,174,.24)';
+      ctx.beginPath();
+      ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(245,166,35,.6)';
+    ctx.beginPath();
+    ctx.arc(origin.x, origin.y, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  var lastWave = 0, lastAmbient = 0, started = 0;
+  function loop(now){
+    if(!started) started = now;
+    if(now - started > 1400 && now - lastWave > 6200){ originWave(now); lastWave = now; }
+    if(now - started > 3200 && now - lastAmbient > 4300){ ambientFire(now); lastAmbient = now; }
+    draw(now);
+    raf = requestAnimationFrame(loop);
+  }
+
+  function start(){
+    build();
+    if(reduce){ still(); return; }
+    if(raf) cancelAnimationFrame(raf);
+    lastWave = 0; lastAmbient = 0; started = 0; waveAt = -1e9;
+    raf = requestAnimationFrame(loop);
+  }
+
+  var resizeTimer;
+  window.addEventListener('resize', function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(start, 220);
+  });
+
+  // fontin latautuminen muuttaa sanan leveyttä → siirrä lähtöpiste uudelleen
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(placeOrigin);
+  }
+  window.addEventListener('load', placeOrigin);
+
+  start();
+})();
+</script>
+
+<a class="li" href="https://linkedin.com/in/jaakkoilmarijantti" target="_blank" rel="noopener" aria-label="LinkedIn: Jaakko Jäntti">
+  <svg viewBox="0 0 29 29" shape-rendering="crispEdges" aria-hidden="true">
+    <rect width="29" height="29" fill="#EFE8F6"/>
+    <path fill="#180D24" d="M0 0h7v1h-7zM8 0h1v1h-1zM11 0h3v1h-3zM16 0h5v1h-5zM22 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM10 1h2v1h-2zM13 1h2v1h-2zM16 1h1v1h-1zM18 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM9 2h1v1h-1zM11 2h3v1h-3zM16 2h1v1h-1zM19 2h1v1h-1zM22 2h1v1h-1zM24 2h3v1h-3zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h4v1h-4zM13 3h2v1h-2zM17 3h3v1h-3zM22 3h1v1h-1zM24 3h3v1h-3zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h3v1h-3zM14 4h3v1h-3zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h3v1h-3zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM9 5h1v1h-1zM11 5h3v1h-3zM16 5h5v1h-5zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h7v1h-7zM8 7h3v1h-3zM12 7h1v1h-1zM15 7h1v1h-1zM17 7h3v1h-3zM0 8h1v1h-1zM2 8h2v1h-2zM5 8h3v1h-3zM12 8h1v1h-1zM14 8h1v1h-1zM17 8h2v1h-2zM22 8h1v1h-1zM25 8h1v1h-1zM27 8h2v1h-2zM3 9h2v1h-2zM7 9h1v1h-1zM10 9h1v1h-1zM12 9h2v1h-2zM16 9h4v1h-4zM21 9h4v1h-4zM28 9h1v1h-1zM0 10h3v1h-3zM6 10h2v1h-2zM9 10h1v1h-1zM13 10h1v1h-1zM16 10h1v1h-1zM21 10h1v1h-1zM24 10h1v1h-1zM26 10h2v1h-2zM1 11h2v1h-2zM7 11h3v1h-3zM12 11h2v1h-2zM16 11h1v1h-1zM19 11h4v1h-4zM24 11h1v1h-1zM28 11h1v1h-1zM0 12h1v1h-1zM2 12h1v1h-1zM6 12h1v1h-1zM11 12h5v1h-5zM17 12h1v1h-1zM19 12h1v1h-1zM25 12h2v1h-2zM0 13h2v1h-2zM3 13h1v1h-1zM8 13h3v1h-3zM15 13h3v1h-3zM19 13h1v1h-1zM22 13h1v1h-1zM26 13h3v1h-3zM1 14h2v1h-2zM4 14h4v1h-4zM9 14h1v1h-1zM11 14h1v1h-1zM13 14h2v1h-2zM19 14h4v1h-4zM24 14h1v1h-1zM26 14h3v1h-3zM1 15h1v1h-1zM3 15h1v1h-1zM5 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM15 15h2v1h-2zM19 15h3v1h-3zM23 15h1v1h-1zM27 15h1v1h-1zM0 16h4v1h-4zM5 16h2v1h-2zM8 16h6v1h-6zM15 16h1v1h-1zM18 16h4v1h-4zM23 16h3v1h-3zM27 16h1v1h-1zM2 17h1v1h-1zM4 17h1v1h-1zM9 17h1v1h-1zM12 17h4v1h-4zM20 17h1v1h-1zM23 17h1v1h-1zM25 17h3v1h-3zM0 18h1v1h-1zM3 18h4v1h-4zM10 18h1v1h-1zM14 18h2v1h-2zM18 18h1v1h-1zM20 18h5v1h-5zM26 18h1v1h-1zM2 19h3v1h-3zM9 19h2v1h-2zM12 19h1v1h-1zM14 19h1v1h-1zM16 19h6v1h-6zM23 19h2v1h-2zM26 19h1v1h-1zM1 20h1v1h-1zM3 20h2v1h-2zM6 20h4v1h-4zM11 20h1v1h-1zM14 20h13v1h-13zM8 21h1v1h-1zM10 21h1v1h-1zM13 21h1v1h-1zM16 21h3v1h-3zM20 21h1v1h-1zM24 21h5v1h-5zM0 22h7v1h-7zM8 22h5v1h-5zM14 22h1v1h-1zM16 22h1v1h-1zM19 22h2v1h-2zM22 22h1v1h-1zM24 22h2v1h-2zM27 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM13 23h2v1h-2zM16 23h1v1h-1zM18 23h1v1h-1zM20 23h1v1h-1zM24 23h2v1h-2zM0 24h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM9 24h1v1h-1zM12 24h1v1h-1zM17 24h1v1h-1zM20 24h5v1h-5zM26 24h3v1h-3zM0 25h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM14 25h3v1h-3zM21 25h1v1h-1zM23 25h3v1h-3zM28 25h1v1h-1zM0 26h1v1h-1zM2 26h3v1h-3zM6 26h1v1h-1zM8 26h6v1h-6zM17 26h1v1h-1zM20 26h1v1h-1zM23 26h1v1h-1zM26 26h1v1h-1zM28 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM10 27h1v1h-1zM14 27h1v1h-1zM16 27h1v1h-1zM20 27h1v1h-1zM22 27h1v1h-1zM24 27h2v1h-2zM27 27h1v1h-1zM0 28h7v1h-7zM8 28h2v1h-2zM11 28h1v1h-1zM13 28h3v1h-3zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM24 28h1v1h-1zM27 28h1v1h-1z"/>
+  </svg>
+  <span>linkedin</span>
+</a>
+
+</body>
+</html>
